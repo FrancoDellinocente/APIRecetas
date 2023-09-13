@@ -1,10 +1,15 @@
 import express from "express";
 import { config } from 'dotenv';
 import cors from "cors";
+
 import { sequelize } from "../database/configdb.js"
+import "../models/ingredienteModel.js"
+import "../models/usuarioModel.js"
+import "../models/recetasModel.js"
+import "../models/rec_ingModel.js"
 import defaultRoutes from "../routes/default.js"
 // import recetasRoutes from "../routes/recetas.js"
-// import usuariosRoutes from "../routes/usuarios.js"
+// import usuarioRoutes from "../routes/usuario.js"
 import ingredientesRoutes from "../routes/ingredientes.js"
 
 class Server {
@@ -27,7 +32,8 @@ class Server {
   async dbConnection(){
     try{
       await sequelize.authenticate();
-      console.log("bd todo bien")
+      console.log("Conexión a la base de datos establecida correctamente.")
+      await sequelize.sync()
     }catch(error){
       throw new Error( error );
     }
@@ -46,7 +52,7 @@ class Server {
   routes() {
     this.app.use("/", defaultRoutes);
     // this.app.use("/api/recetas", recetasRoutes)
-    // this.app.use("/api/usuarios", usuariosRoutes)
+    // this.app.use("/api/usuario", usuarioRoutes)
     this.app.use("/api/ingredientes", ingredientesRoutes)
   }
 

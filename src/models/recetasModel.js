@@ -2,41 +2,46 @@ import { DataTypes} from 'sequelize';
 import {sequelize} from '../database/configdb.js';
 import RecIng from './rec_ingModel.js';
 
-const Ingrediente = sequelize.define('ingrediente', {
-  idingredientes: {
+const Receta = sequelize.define('receta', {
+  idreceta: {
     type: DataTypes.INTEGER,
     primaryKey: true, // Clave primaria
     autoIncrement: true, // Auto incremental
     allowNull: false, // No nulo
     unique: true, // Valor único
   },
-  Nombre: {
-    type: DataTypes.STRING(45), // VARCHAR(45)
-    allowNull: false, // No nulo
+  Nombre:{
+    type: DataTypes.STRING(45), 
+    allowNull: false, 
+  },
+  Descripcion:{
+    type: DataTypes.STRING(1000), 
+    allowNull: true,
+    defaultValue: null, 
   },
 }, {
   timestamps: false,
 });
 
-Ingrediente.hasMany(
+Receta.hasMany(
   RecIng, {
     foreignKey: {
-      name: "ingrediente_id",
+      name: "receta_id",
       allowNull: false,
     },
-    sourceKey: "idingredientes",
+    sourceKey: "idreceta",
   }
 )
 
 RecIng.belongsTo(
-  Ingrediente, {
+  Receta, {
     foreignKey: {
-      name: "ingrediente_id",
+      name: "receta_id",
       allowNull: false,
     },
-    targetId: "idingredientes",
+    targetId: "idreceta",
   }
 )
 
 
-export default Ingrediente;
+export default Receta;
