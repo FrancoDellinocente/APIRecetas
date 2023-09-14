@@ -1,12 +1,18 @@
-// import {Router} from "express";
-// import {pool} from "../database/configdb.js"
+import {Router} from "express";
+import { getRecetaByID, getRecetaByUserID, getRecetas, postReceta, putReceta } from "../controllers/recetasController.js";
 
-// const router = Router();
+const router = Router();
 
-// router.get("/", async(req,res) => {
-//     const [result] = await pool.query('SELECT * FROM receta')
-//     console.log("hello world")
-//     res.json(result[0])
-// })
+router.get("/", [], getRecetas)
 
-// export default router
+router.get("/:id", [], getRecetaByID)
+
+router.get("/usuario/:idUsuario", [], getRecetaByUserID)
+
+router.post("/", [], postReceta)
+
+router.put("/:id", [], putReceta)
+
+
+
+export default router

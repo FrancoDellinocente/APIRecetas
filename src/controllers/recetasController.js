@@ -1,113 +1,201 @@
 import { Router } from "express";
-import Ingrediente from '../models/ingredienteModel.js';
+import Receta from "../models/recetasModel.js";
+import RecIng from "../models/rec_ingModel.js";
+import { sequelize } from "../database/configdb.js"
 
 const router = Router();
 
 // Obtener todas los recetas
 export const getRecetas = async (req, res) => {
     try {
-      const ingredientes = await Ingrediente.findAll();
+      const recetas = await Receta.findAll();
   
       res.status(200).json({
         status: true,
-        msg: 'Ingredientes Obtenidos',
-        totalRegistros: ingredientes.length,
-        ingredientes,
+        msg: 'Recetas Obtenidos',
+        totalRegistros: recetas.length,
+        recetas,
       });
     } catch (error) {
       console.error(error);
       res.status(500).json({
         status: false,
-        msg: 'Error al obtener ingredientes',
+        msg: 'Error al obtener recetas',
         error: error.message,
       });
     }
   };
-  
-  // Obtener un ingrediente por ID
-  export const getRecetaByID = async (req, res) => {
+
+  // Obtener un receta por usuario
+  export const getRecetaByUserID = async (req, res) => {
     try {
-      const { id } = req.params;
-      const ingrediente = await Ingrediente.findByPk(id);
+      const { idUsuario } = req.params;
+      const recetas = await Receta.findAll({
+        where: {
+          usuario_id: idUsuario,
+        },
+      });
   
-      if (!ingrediente) {
+      if (recetas.length = 0) {
         return res.status(204).json({
           status: true,
-          msg: 'Ingrediente no encontrado',
+          msg: 'Receta no encontradas',
           totalRegistros: 0,
         });
       }
   
       res.status(200).json({
         status: true,
-        msg: 'Ingrediente Obtenido',
-        totalRegistros: 1,
-        ingrediente,
+        msg: 'Receta Obtenido',
+        totalRegistros: recetas.length,
+        recetas,
       });
     } catch (error) {
       console.error(error);
       res.status(500).json({
         status: false,
-        msg: 'Error al obtener el ingrediente',
+        msg: 'Error al obtener el Recetas',
         error: error.message,
       });
     }
   };
-
-  export const postRecetas = async (req, res) => {
-    try {
-      const { Nombre } = req.body;
   
-      const nuevoIngrediente = await Ingrediente.create({
-        Nombre,
-      });
-  
-      res.status(201).json({
-        status: true,
-        msg: 'Ingrediente creado exitosamente',
-        ingrediente: nuevoIngrediente,
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({
-        status: false,
-        msg: 'Error al crear el ingrediente',
-        error: error.message,
-      });
-    }
-  };
-
-  // Actualizar Recetas 
-export const putRecetas = async (req, res) => {
+  // Obtener un receta por ID
+  export const getRecetaByID = async (req, res) => {
     try {
       const { id } = req.params;
-      const { Nombre } = req.body;
+      const recetas = await Receta.findByPk(id);
   
-      // Verifica si el Recetas existe
-      const ingrediente = await Ingrediente.findByPk(id);
-  
-      if (!ingrediente) {
-        return res.status(404).json({
-          status: false,
-          msg: 'Ingrediente no encontrado',
+      if (!recetas) {
+        return res.status(204).json({
+          status: true,
+          msg: 'Receta no encontrado',
+          totalRegistros: 0,
         });
       }
   
-      // Actualiza
-      ingrediente.Nombre = Nombre;
-      await ingrediente.save();
-  
       res.status(200).json({
         status: true,
-        msg: 'Ingrediente actualizado exitosamente',
-        ingrediente,
+        msg: 'Receta Obtenida',
+        totalRegistros: recetas.length,
+        recetas,
       });
     } catch (error) {
       console.error(error);
       res.status(500).json({
         status: false,
-        msg: 'Error al actualizar el recetas',
+        msg: 'Error al obtener la receta',
         error: error.message,
       });
     }
   };
+
+  // Crea receta nueva
+  export const postReceta = async (req, res) => {
+    const t = await sequelize.transaction(); 
+    try {
+      const { Nombre, Descripcion, usuario_id, ingredientes } = req.body;
+
+      const nuevaReceta = await Receta.create({
+        Nombre,
+        Descripcion,
+        usuario_id,
+      },
+      { transaction: t });
+
+
+      for (const ingrediente of ingredientes) {
+        const { idIngrediente, Cantidad, Unidad } = ingrediente;
+
+        await RecIng.create({
+          receta_id: nuevaReceta.idreceta,
+          ingrediente_id: idIngrediente, 
+          Cantidad: Cantidad,
+          Unidad: Unidad,
+        },
+        { transaction: t });
+      }
+
+      // Confirma la transacción si todo ha ido bien
+      await t.commit();
+
+      res.status(201).json({
+        status: true,
+        msg: 'Receta creada exitosamente con ingredientes',
+        receta: nuevaReceta,
+      });
+    } catch (error) {
+      console.error(error);
+
+      await t.rollback();
+
+      res.status(500).json({
+        status: false,
+        msg: 'Error al crear la receta con ingredientes',
+        error: error.message,
+      });
+    }
+  };
+
+
+// Actualiza una receta existente
+export const putReceta = async (req, res) => {
+  const t = await sequelize.transaction(); 
+
+  try {
+    const { id } = req.params; 
+    const { Nombre, Descripcion, ingredientes } = req.body; 
+
+    // Verifica si la receta existe
+    const receta = await Receta.findByPk(id);
+
+    if (!receta) {
+      await t.rollback(); // Deshace la transacción en caso de receta no encontrada
+      return res.status(404).json({
+        status: false,
+        msg: 'Receta no encontrada',
+      });
+    }
+    
+    receta.Nombre = Nombre;
+    receta.Descripcion = Descripcion;
+
+    await receta.save({ transaction: t });
+
+    // Borra todos los ingredientes relacionados con la receta
+    await RecIng.destroy({ where: { receta_id: id }, transaction: t });
+
+    // Itera sobre el array de nuevos ingredientes y crea las instancias en la tabla intermedia dentro de la transacción
+    for (const ingrediente of ingredientes) {
+      const { idIngrediente, Cantidad, Unidad } = ingrediente;
+
+      await RecIng.create(
+        {
+          receta_id: id, 
+          ingrediente_id: idIngrediente,
+          Cantidad: Cantidad,
+          Unidad: Unidad,
+        },
+        { transaction: t }
+      );
+    }
+
+    await t.commit();
+
+    res.status(200).json({
+      status: true,
+      msg: 'Receta actualizada exitosamente con ingredientes',
+      receta,
+    });
+  } catch (error) {
+    console.error(error);
+
+    await t.rollback();
+
+    res.status(500).json({
+      status: false,
+      msg: 'Error al actualizar la receta con ingredientes',
+      error: error.message,
+    });
+  }
+};
