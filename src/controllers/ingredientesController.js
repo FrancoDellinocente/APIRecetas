@@ -1,5 +1,7 @@
 import { Router } from "express";
 import Ingrediente from '../models/ingredienteModel.js';
+import Receta from "../models/recetasModel.js";
+import RecIng from "../models/rec_ingModel.js";
 
 const router = Router();
 
@@ -28,7 +30,10 @@ export const getIngredientes = async (req, res) => {
   export const getIngredientesByID = async (req, res) => {
     try {
       const { id } = req.params;
-      const ingrediente = await Ingrediente.findByPk(id);
+
+      const ingrediente = await Ingrediente.findByPk(id, {
+        include: Receta, // Incluye la relación con Receta
+      });
   
       if (!ingrediente) {
         return res.status(204).json({
@@ -55,34 +60,48 @@ export const getIngredientes = async (req, res) => {
   };
 
   // Obtener recetas que incluyan un ingrediente específico
-export const getRecetasByIngredienteID = async (req, res) => {
-  try {
-    const { id } = req.params;
+  export const getRecetasByIngredienteID = async (req, res) => {
+    try {
+      const { id } = req.params;
+  
+      const ingrediente = await Ingrediente.findByPk(id);
+  
+      if (!ingrediente) {
+        return res.status(404).json({
+          status: false,
+          msg: 'Ingrediente no encontrado',
+        });
+      }
 
-    const ingrediente = await Ingrediente.findByPk(id);
+      console.log(ingrediente)
 
-    if (!ingrediente) {
-      return res.status(404).json({
+      const recetas = await Receta.findAll({
+        include: [
+          {
+            model: Ingrediente,
+            through: RecIng,
+          },
+        ],
+        where: {
+          '$ingredientes.idingredientes$': ingrediente.idingredientes,
+        },
+      });
+      // Utiliza la relación para obtener las recetas que incluyen el ingrediente
+      // const recetas = await ingrediente.getRecetas();
+  
+      res.status(200).json({
+        status: true,
+        msg: 'Recetas que incluyen el ingrediente',
+        totalRecetas: recetas.length,
+        recetas,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
         status: false,
-        msg: 'Ingrediente no encontrado',
+        msg: 'Error al obtener las recetas del ingrediente',
+        error: error.message,
       });
     }
-
-    // Utiliza la relación para obtener las recetas que incluyen el ingrediente
-    const recetas = await ingrediente.getRecetas();
-
-    res.status(200).json({
-      status: true,
-      msg: 'Recetas que incluyen el ingrediente',
-      totalRecetas: recetas.length,
-      recetas,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      status: false,
-      msg: 'Error al obtener las recetas del ingrediente',
-      error: error.message,
-    });
-  }
-};
+  };
+   
