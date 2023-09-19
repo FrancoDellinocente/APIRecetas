@@ -9,7 +9,7 @@ import "../models/recetasModel.js"
 import "../models/rec_ingModel.js"
 import defaultRoutes from "../routes/default.js"
 import recetasRoutes from "../routes/recetas.js"
-// import usuarioRoutes from "../routes/usuario.js"
+import usuarioRoutes from "../routes/usuario.js"
 import ingredientesRoutes from "../routes/ingredientes.js"
 
 class Server {
@@ -52,7 +52,7 @@ class Server {
   routes() {
     this.app.use("/", defaultRoutes);
     this.app.use("/api/recetas", recetasRoutes)
-    // this.app.use("/api/usuario", usuarioRoutes)
+    this.app.use("/api/usuario", usuarioRoutes)
     this.app.use("/api/ingredientes", ingredientesRoutes)
   }
 

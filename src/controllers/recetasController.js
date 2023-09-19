@@ -199,3 +199,46 @@ export const putReceta = async (req, res) => {
     });
   }
 };
+
+// Eliminar una receta
+export const deleteReceta = async (req, res) => {
+  const t = await sequelize.transaction();
+
+  try {
+    const { id } = req.params; // Obtén el ID de la receta a eliminar
+
+    // Verifica si la receta existe
+    const receta = await Receta.findByPk(id);
+
+    if (!receta) {
+      await t.rollback();
+      return res.status(404).json({
+        status: false,
+        msg: 'Receta no encontrada',
+      });
+    }
+
+    await RecIng.destroy({ where: { receta_id: id }, transaction: t });
+
+    // Elimina la receta en sí
+    await receta.destroy({ transaction: t });
+
+    await t.commit();
+
+    res.status(200).json({
+      status: true,
+      msg: 'Receta eliminada exitosamente con sus ingredientes',
+    });
+  } catch (error) {
+    console.error(error);
+
+    await t.rollback();
+
+    res.status(500).json({
+      status: false,
+      msg: 'Error al eliminar la receta con ingredientes',
+      error: error.message,
+    });
+  }
+};
+

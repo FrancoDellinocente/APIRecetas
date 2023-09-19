@@ -1,12 +1,17 @@
-// import {Router} from "express";
-// import {pool} from "../database/configdb.js"
+import {Router} from "express";
+import { deleteUsuario, getUsuarioByID, getUsuarios, postUsuario, putUsuario } from "../controllers/usuarioController.js";
 
-// const router = Router();
+const router = Router();
 
-// router.get("/", async(req,res) => {
-//     const [result] = await pool.query('SELECT * FROM usuario')
-//     console.log("hello world")
-//     res.json(result[0])
-// })
+router.get("/", [], getUsuarios)
 
-// export default router
+router.get("/:id", [], getUsuarioByID)
+
+router.post("/", [], postUsuario)
+
+router.put("/:id", [], putUsuario)
+
+router.delete("/:id", [], deleteUsuario)
+
+
+export default router
