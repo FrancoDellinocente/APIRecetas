@@ -12,6 +12,7 @@ import defaultRoutes from "../routes/default.js"
 import recetasRoutes from "../routes/recetas.js"
 import usuarioRoutes from "../routes/usuario.js"
 import ingredientesRoutes from "../routes/ingredientes.js"
+import authRoutes from "../routes/auth.js"
 
 class Server {
   constructor() {
@@ -55,6 +56,7 @@ class Server {
     this.app.use("/api/recetas", recetasRoutes)
     this.app.use("/api/usuario", usuarioRoutes)
     this.app.use("/api/ingredientes", ingredientesRoutes)
+    this.app.use("/api/auth", authRoutes)
   }
 
   listen() {
